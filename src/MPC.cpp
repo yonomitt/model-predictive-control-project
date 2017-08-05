@@ -45,6 +45,84 @@ class FG_eval {
     // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
     // NOTE: You'll probably go back and forth between this function and
     // the Solver function below.
+
+    fg[0] = 0.0;
+
+    // Cost based on reference state
+    for (int i = 0; i < N; i++) {
+      // Minimize cross track error
+      fg[0] += CppAD::pow(vars[cte_begin + i], 2);
+
+      // Minimize orientation error
+      fg[0] += CppAD::pow(vars[epsi_begin + i], 2);
+
+      // Keep velocity as close to the target velocity as possible
+      fg[0] += CppAD::pow(vars[v_begin + i] - target_v, 2);
+    } 
+
+    // Cost based on change in actuators to make a smoother ride
+    for (int i = 1; i < N - 1; i++) {
+      // Minimize changes in steering
+      fg[0] += CppAD::pow(vars[steer_begin + i] - vars[steer_begin + i - 1], 2);
+
+      // Minimize changes in throttle
+      fg[0] += CppAD::pow(vars[throttle_begin + i] - vars[throttle_begin + i - 1], 2);
+    }
+
+    // Initial state
+    fg[1 + x_begin] = vars[x_begin];   
+    fg[1 + y_begin] = vars[y_begin];   
+    fg[1 + psi_begin] = vars[psi_begin];   
+    fg[1 + v_begin] = vars[v_begin];   
+    fg[1 + cte_begin] = vars[cte_begin];   
+    fg[1 + epsi_begin] = vars[epsi_begin];   
+
+    // Setup constraints
+    for (int i = 0; i < N - 1; i++) {
+      // Current state
+      AD<double> x_i = vars[x_begin + i];
+      AD<double> y_i = vars[y_begin + i];
+      AD<double> psi_i = vars[psi_begin + i];
+      AD<double> v_i = vars[v_begin + i];
+      AD<double> cte_i = vars[cte_begin + i];
+      AD<double> epsi_i = vars[epsi_begin + i];
+
+      AD<double> steer_i = vars[steer_begin + i];
+      AD<double> throttle_i = vars[throttle_begin + i];
+
+      // Next state
+      AD<double> x_i_1 = vars[x_begin + i + 1];
+      AD<double> y_i_1 = vars[y_begin + i + 1];
+      AD<double> psi_i_1 = vars[psi_begin + i + 1];
+      AD<double> v_i_1 = vars[v_begin + i + 1];
+      AD<double> cte_i_1 = vars[cte_begin + i + 1];
+      AD<double> epsi_i_1 = vars[epsi_begin + i + 1];
+
+      // Calculate the desired position 
+      AD<double> f_x = coeffs[0];
+
+      // Calculate the derivative at the desired position
+      AD<double> f_dx = 0.0;
+      AD<double> x = 1.0;
+      for (int j = 1; j < coeffs.size(); j++) {
+        f_dx += j * coeffs[j] * x;
+        x = x * x_i;
+        f_x += coeffs[j] * x;
+      }
+
+      // Calculate the desired orientation
+      AD<double> psi_des = CppAD::atan(f_dx);
+
+      AD<double> v_i_dt = v_i * dt;
+      AD<double> next_psi = psi_i + v_i_dt * steer_i / Lf;
+
+      fg[1 + x_begin + i] = x_i_1 - (x_i + cos(psi_i) * v_i_dt);
+      fg[1 + y_begin + i] = y_i_1 - (y_i + sin(psi_i) * v_i_dt);
+      fg[1 + psi_begin + i] = psi_i_1 - next_psi;
+      fg[1 + v_begin + i] = v_i_1 - (throttle_i * v_i_dt);
+      fg[1 + cte_begin + i] = cte_i_1 - (f_x - y_i + sin(epsi_i) * v_i_dt);
+      fg[1 + epsi_begin + 1] = next_psi - psi_des;
+    }
   }
 };
 
