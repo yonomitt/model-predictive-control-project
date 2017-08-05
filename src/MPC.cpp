@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 0;
-double dt = 0;
+size_t N = 20;
+double dt = 0.2;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -20,6 +20,15 @@ double dt = 0;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
+
+size_t x_begin = 0;
+size_t y_begin = x_begin + N;
+size_t psi_begin = y_begin + N;
+size_t v_begin = psi_begin + N;
+size_t cte_begin = v_begin + N;
+size_t epsi_begin = cte_begin + N;
+size_t steer_begin = epsi_begin + N;
+size_t throttle_begin = steer_begin + N - 1;
 
 class FG_eval {
  public:
