@@ -2,6 +2,7 @@
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
+#include <float.h>
 
 using CppAD::AD;
 
@@ -61,9 +62,9 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // element vector and there are 10 timesteps. The number of variables is:
   //
   // 4 * 10 + 2 * 9
-  size_t n_vars = 0;
+  size_t n_vars = 6 * N + 2 * (N - 1);
   // TODO: Set the number of constraints
-  size_t n_constraints = 0;
+  size_t n_constraints = 6 * N;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -75,6 +76,24 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
+
+  for (int i = 0; i < steer_begin; i++) {
+    vars_lowerbound = DBL_MIN;
+    vars_upperbound = DBL_MAX;
+  }
+
+  // Steering angle needs to in range [-25, 25] degrees, but should be in radians
+  double radians25 = M_PI * 25 / 180;
+  for (int i = steer_begin; i < throttle_begin; i++) {
+    vars_lowerbound = -radians25;
+    vars_upperbound = radians25;
+  }
+
+  // Acceleration should be between [0, 1]
+  for (int i = throttle_begin; i < n_vars; i++) {
+    vars_lowerbound = 0.0;
+    vars_upperbound = 1.0;
+  }
 
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
@@ -126,5 +145,5 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {};
+  return {solution.x[steer_begin], solution.x[throttle_begin]};
 }
