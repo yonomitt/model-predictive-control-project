@@ -98,8 +98,48 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+	  // Helper calculations
+	  double cosPsi = cos(-psi);
+	  double sinPsi = sin(-psi);
+
+	  // Create transformation matrix to convert from world to car coordinates
+	  Eigen::MatrixXd translate(3, 3);
+	  Eigen::MatrixXd rotate(3, 3);
+
+	  translate << 1, 0, -px,
+		       0, 1, -py,
+		       0, 0,   1;
+
+	  rotate << cosPsi, -sinPsi, 0,
+		    sinPsi,  cosPsi, 0,
+		        0,       0,  1;
+
+          Eigen::MatrixXd transform = rotate * translate;
+
+          // Vectors to hold the x and y values of the waypoints in the car's frame
+	  vector<double> car_ptsx;
+	  vector<double> car_ptsy;
+
+	  // Transform the waypoints to the car's frame
+	  for (int i = 0; i < (int)ptsx.size(); i++) {
+
+            // Create a waypoint vector
+            Eigen::VectorXd waypoint(3);
+            waypoint << ptsx[i],
+                        ptsy[i],
+                              1;
+
+            // Transform the waypoint to the car's frame
+            Eigen::VectorXd car_waypoint = transform * waypoint;
+
+            // Store the x and y values in separate vectors
+            car_ptsx.push_back(car_waypoint[0]);
+            car_ptsy.push_back(car_waypoint[1]);
+          }
+
+          double steer_value = 0;
+          double throttle_value = 0.3;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -118,8 +158,8 @@ int main() {
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
+          vector<double> next_x_vals = car_ptsx;
+          vector<double> next_y_vals = car_ptsy;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
