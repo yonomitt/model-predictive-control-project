@@ -138,8 +138,32 @@ int main() {
             car_ptsy.push_back(car_waypoint[1]);
           }
 
-          double steer_value = 0;
-          double throttle_value = 0.3;
+          // Calculate the coefficients to the best fit polynomial that passes through the waypoints
+          auto coeffs = polyfit(Eigen::Map<Eigen::VectorXd>(&ptsx[0], ptsx.size()), Eigen::Map<Eigen::VectorXd>(&ptsy[0], ptsy.size()), 2);
+
+          // Calculate the cross track error
+          double cte = polyeval(coeffs, px) - py;
+
+          // Calculate the derivative of the polynomial at the current location
+          double f_dx = coeffs[1];
+          double x = 1.0;
+          for (int i = 2; i < coeffs.size(); i++) {
+            x = x * px;
+            f_dx += i * coeffs[i] * x;
+          }
+
+          // Use this derivate to calculate the orientation error
+          double epsi = psi - atan(f_dx);
+
+          // Create a vector describing the current state of the car
+          Eigen::VectorXd state(6);
+          state << px, py, psi, v, cte, epsi;
+
+          // Use the MPC to calculate the optimal steering and throttle values
+          auto actuators = mpc.Solve(state, coeffs);
+
+          double steer_value = actuators[0];
+          double throttle_value = actuators[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
