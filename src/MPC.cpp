@@ -116,12 +116,12 @@ class FG_eval {
       AD<double> v_i_dt = v_i * dt;
       AD<double> next_psi = psi_i + v_i_dt * steer_i / Lf;
 
-      fg[1 + x_begin + i] = x_i_1 - (x_i + cos(psi_i) * v_i_dt);
-      fg[1 + y_begin + i] = y_i_1 - (y_i + sin(psi_i) * v_i_dt);
-      fg[1 + psi_begin + i] = psi_i_1 - next_psi;
-      fg[1 + v_begin + i] = v_i_1 - (throttle_i * v_i_dt);
-      fg[1 + cte_begin + i] = cte_i_1 - (f_x - y_i + sin(epsi_i) * v_i_dt);
-      fg[1 + epsi_begin + 1] = next_psi - psi_des;
+      fg[1 + x_begin + i + 1] = x_i_1 - (x_i + cos(psi_i) * v_i_dt);
+      fg[1 + y_begin + i + 1] = y_i_1 - (y_i + sin(psi_i) * v_i_dt);
+      fg[1 + psi_begin + i + 1] = psi_i_1 - next_psi;
+      fg[1 + v_begin + i + 1] = v_i_1 - (throttle_i * v_i_dt);
+      fg[1 + cte_begin + i + 1] = cte_i_1 - (f_x - y_i + sin(epsi_i) * v_i_dt);
+      fg[1 + epsi_begin + i + 1] = next_psi - psi_des;
     }
   }
 };
