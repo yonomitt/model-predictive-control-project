@@ -158,21 +158,21 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // TODO: Set lower and upper limits for variables.
 
   for (int i = 0; i < steer_begin; i++) {
-    vars_lowerbound = DBL_MIN;
-    vars_upperbound = DBL_MAX;
+    vars_lowerbound[i] = DBL_MIN;
+    vars_upperbound[i] = DBL_MAX;
   }
 
   // Steering angle needs to in range [-25, 25] degrees, but should be in radians
   double radians25 = M_PI * 25 / 180;
   for (int i = steer_begin; i < throttle_begin; i++) {
-    vars_lowerbound = -radians25;
-    vars_upperbound = radians25;
+    vars_lowerbound[i] = -radians25;
+    vars_upperbound[i] = radians25;
   }
 
   // Acceleration should be between [0, 1]
   for (int i = throttle_begin; i < n_vars; i++) {
-    vars_lowerbound = 0.0;
-    vars_upperbound = 1.0;
+    vars_lowerbound[i] = 0.0;
+    vars_upperbound[i] = 1.0;
   }
 
   // Lower and upper limits for the constraints
