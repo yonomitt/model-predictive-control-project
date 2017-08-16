@@ -146,6 +146,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // TODO: Set the number of constraints
   size_t n_constraints = 6 * N;
 
+  double x = state[0];
+  double y = state[1];
+  double psi = state[2];
+  double v = state[3];
+  double cte = state[4];
+  double epsi = state[5];
+
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
@@ -153,25 +160,32 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars[i] = 0;
   }
 
+  vars[x_begin] = x;
+  vars[y_begin] = y;
+  vars[psi_begin] = psi;
+  vars[v_begin] = v;
+  vars[cte_begin] = cte;
+  vars[epsi_begin] = epsi;
+
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
 
   for (int i = 0; i < steer_begin; i++) {
-    vars_lowerbound[i] = DBL_MIN;
-    vars_upperbound[i] = DBL_MAX;
+    vars_lowerbound[i] = -1.0e19;
+    vars_upperbound[i] = 1.0e19;
   }
 
   // Steering angle needs to in range [-25, 25] degrees, but should be in radians
-  double radians25 = M_PI * 25 / 180;
+  double radians25 = M_PI * 25.0 / 180.0;
   for (int i = steer_begin; i < throttle_begin; i++) {
     vars_lowerbound[i] = -radians25;
     vars_upperbound[i] = radians25;
   }
 
-  // Acceleration should be between [0, 1]
+  // Acceleration should be between [-1, 1]
   for (int i = throttle_begin; i < n_vars; i++) {
-    vars_lowerbound[i] = 0.0;
+    vars_lowerbound[i] = -1.0;
     vars_upperbound[i] = 1.0;
   }
 
@@ -183,6 +197,20 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     constraints_lowerbound[i] = 0;
     constraints_upperbound[i] = 0;
   }
+;
+  constraints_lowerbound[x_begin] = x;
+  constraints_lowerbound[y_begin] = y;
+  constraints_lowerbound[psi_begin] = psi;
+  constraints_lowerbound[v_begin] = v;
+  constraints_lowerbound[cte_begin] = cte;
+  constraints_lowerbound[epsi_begin] = epsi;
+
+  constraints_upperbound[x_begin] = x;
+  constraints_upperbound[y_begin] = y;
+  constraints_upperbound[psi_begin] = psi;
+  constraints_upperbound[v_begin] = v;
+  constraints_upperbound[cte_begin] = cte;
+  constraints_upperbound[epsi_begin] = epsi;
 
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
