@@ -253,5 +253,15 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {solution.x[steer_begin], solution.x[throttle_begin]};
+
+  vector<double> ret;
+  ret.push_back(solution.x[steer_begin]);
+  ret.push_back(solution.x[throttle_begin]);
+
+  for (int i = 1; i < N; i++) {
+    ret.push_back(solution.x[x_begin + i]);
+    ret.push_back(solution.x[y_begin + i]);
+  }
+
+  return ret;
 }

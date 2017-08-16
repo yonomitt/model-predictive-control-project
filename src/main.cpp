@@ -162,10 +162,10 @@ int main() {
           state << px, py, psi, v, cte, epsi;
 
           // Use the MPC to calculate the optimal steering and throttle values
-          auto actuators = mpc.Solve(state, coeffs);
+          auto solution = mpc.Solve(state, coeffs);
 
-          double steer_value = actuators[0];
-          double throttle_value = actuators[1];
+          double steer_value = solution[0];
+          double throttle_value = solution[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -176,6 +176,11 @@ int main() {
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
+
+	  for (int i = 2; i < solution.size(); i += 2) {
+            mpc_x_vals.push_back(solution[i]);
+            mpc_y_vals.push_back(solution[i + 1]);
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
