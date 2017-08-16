@@ -54,19 +54,25 @@ class FG_eval {
       fg[0] += CppAD::pow(vars[cte_begin + i], 2);
 
       // Minimize orientation error
-      fg[0] += CppAD::pow(vars[epsi_begin + i], 2);
+      fg[0] += 100 * CppAD::pow(vars[epsi_begin + i], 2);
 
       // Keep velocity as close to the target velocity as possible
-      fg[0] += CppAD::pow(vars[v_begin + i] - target_v, 2);
+      fg[0] += 5 * CppAD::pow(vars[v_begin + i] - target_v, 2);
     } 
+
+    // Minimize the use of actuators.
+    for (int i = 0; i < N - 1; i++) {
+      fg[0] += 100 * CppAD::pow(vars[steer_begin + i], 2);
+      fg[0] += 50 * CppAD::pow(vars[throttle_begin + i], 2);
+    }
 
     // Cost based on change in actuators to make a smoother ride
     for (int i = 1; i < N - 1; i++) {
       // Minimize changes in steering
-      fg[0] += CppAD::pow(vars[steer_begin + i] - vars[steer_begin + i - 1], 2);
+      fg[0] += 3000 * CppAD::pow(vars[steer_begin + i] - vars[steer_begin + i - 1], 2);
 
       // Minimize changes in throttle
-      fg[0] += CppAD::pow(vars[throttle_begin + i] - vars[throttle_begin + i - 1], 2);
+      fg[0] += 2000 * CppAD::pow(vars[throttle_begin + i] - vars[throttle_begin + i - 1], 2);
     }
 
     // Initial state
