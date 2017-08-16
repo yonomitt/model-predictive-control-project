@@ -77,6 +77,7 @@ class FG_eval {
     fg[1 + cte_begin] = vars[cte_begin];   
     fg[1 + epsi_begin] = vars[epsi_begin];   
 
+    int latency = round(0.1 / dt);
     // Setup constraints
     for (int i = 0; i < N - 1; i++) {
       // Current state
@@ -89,6 +90,11 @@ class FG_eval {
 
       AD<double> steer0 = vars[steer_begin + i];
       AD<double> throttle0 = vars[throttle_begin + i];
+
+      if (i > (latency - 1)) {
+        throttle0 = vars[throttle_begin + i - latency];
+        steer0 = vars[steer_begin + i - latency];
+      }
 
       // Next state
       AD<double> x1 = vars[x_begin + i + 1];
