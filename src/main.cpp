@@ -98,18 +98,87 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+	  // Helper calculations
+	  double cosPsi = cos(-psi);
+	  double sinPsi = sin(-psi);
+
+	  // Create transformation matrix to convert from world to car coordinates
+	  Eigen::MatrixXd translate(3, 3);
+	  Eigen::MatrixXd rotate(3, 3);
+
+	  translate << 1, 0, -px,
+		       0, 1, -py,
+		       0, 0,   1;
+
+	  rotate << cosPsi, -sinPsi, 0,
+		    sinPsi,  cosPsi, 0,
+		        0,       0,  1;
+
+          Eigen::MatrixXd transform = rotate * translate;
+
+          // Vectors to hold the x and y values of the waypoints in the car's frame
+	  vector<double> car_ptsx;
+	  vector<double> car_ptsy;
+
+	  // Transform the waypoints to the car's frame
+	  for (int i = 0; i < (int)ptsx.size(); i++) {
+
+            // Create a waypoint vector
+            Eigen::VectorXd waypoint(3);
+            waypoint << ptsx[i],
+                        ptsy[i],
+                              1;
+
+            // Transform the waypoint to the car's frame
+            Eigen::VectorXd car_waypoint = transform * waypoint;
+
+            // Store the x and y values in separate vectors
+            car_ptsx.push_back(car_waypoint[0]);
+            car_ptsy.push_back(car_waypoint[1]);
+          }
+
+          // Calculate the coefficients to the best fit polynomial that passes through the waypoints
+          auto coeffs = polyfit(Eigen::Map<Eigen::VectorXd>(&car_ptsx[0], car_ptsx.size()), Eigen::Map<Eigen::VectorXd>(&car_ptsy[0], car_ptsy.size()), 3);
+
+          // Now that everything is from the car's coordinate system, position and orientation is always zero
+          px = 0.0;
+          py = 0.0;
+          psi = 0.0;
+
+          // Calculate the cross track error -- just the constant term of the polynomial, as it's from the car's point of view (x = 0)
+          double cte = coeffs[0];
+
+          // Calculate the derivative of the polynomial at (x = 0), which is just the coefficient of the x^1 term of the polynomial
+          double f_dx = coeffs[1];
+
+          // Use this derivate to calculate the orientation error
+          double epsi = psi - atan(f_dx);
+
+          // Create a vector describing the current state of the car
+          Eigen::VectorXd state(6);
+          state << px, py, psi, v, cte, epsi;
+
+          // Use the MPC to calculate the optimal steering and throttle values
+          auto solution = mpc.Solve(state, coeffs);
+
+          double steer_value = solution[0];
+          double throttle_value = solution[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = steer_value / deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
+
+	  for (int i = 2; i < solution.size(); i += 2) {
+            mpc_x_vals.push_back(solution[i]);
+            mpc_y_vals.push_back(solution[i + 1]);
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
@@ -118,8 +187,8 @@ int main() {
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
+          vector<double> next_x_vals = car_ptsx;
+          vector<double> next_y_vals = car_ptsy;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
@@ -129,7 +198,7 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
