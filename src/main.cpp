@@ -139,10 +139,12 @@ int main() {
           }
 
           // Calculate the coefficients to the best fit polynomial that passes through the waypoints
-          auto coeffs = polyfit(Eigen::Map<Eigen::VectorXd>(&ptsx[0], ptsx.size()), Eigen::Map<Eigen::VectorXd>(&ptsy[0], ptsy.size()), 2);
+          auto coeffs = polyfit(Eigen::Map<Eigen::VectorXd>(&car_ptsx[0], car_ptsx.size()), Eigen::Map<Eigen::VectorXd>(&car_ptsy[0], car_ptsy.size()), 3);
 
-          // Calculate the cross track error
-          double cte = polyeval(coeffs, px) - py;
+          // Now that everything is from the car's coordinate system, position and orientation is always zero
+          px = 0.0;
+          py = 0.0;
+          psi = 0.0;
 
           // Calculate the derivative of the polynomial at the current location
           double f_dx = coeffs[1];
