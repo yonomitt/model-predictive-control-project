@@ -80,23 +80,23 @@ class FG_eval {
     // Setup constraints
     for (int i = 0; i < N - 1; i++) {
       // Current state
-      AD<double> x_i = vars[x_begin + i];
-      AD<double> y_i = vars[y_begin + i];
-      AD<double> psi_i = vars[psi_begin + i];
-      AD<double> v_i = vars[v_begin + i];
-      AD<double> cte_i = vars[cte_begin + i];
-      AD<double> epsi_i = vars[epsi_begin + i];
+      AD<double> x0 = vars[x_begin + i];
+      AD<double> y0 = vars[y_begin + i];
+      AD<double> psi0 = vars[psi_begin + i];
+      AD<double> v0 = vars[v_begin + i];
+      AD<double> cte0 = vars[cte_begin + i];
+      AD<double> epsi0 = vars[epsi_begin + i];
 
-      AD<double> steer_i = vars[steer_begin + i];
-      AD<double> throttle_i = vars[throttle_begin + i];
+      AD<double> steer0 = vars[steer_begin + i];
+      AD<double> throttle0 = vars[throttle_begin + i];
 
       // Next state
-      AD<double> x_i_1 = vars[x_begin + i + 1];
-      AD<double> y_i_1 = vars[y_begin + i + 1];
-      AD<double> psi_i_1 = vars[psi_begin + i + 1];
-      AD<double> v_i_1 = vars[v_begin + i + 1];
-      AD<double> cte_i_1 = vars[cte_begin + i + 1];
-      AD<double> epsi_i_1 = vars[epsi_begin + i + 1];
+      AD<double> x1 = vars[x_begin + i + 1];
+      AD<double> y1 = vars[y_begin + i + 1];
+      AD<double> psi1 = vars[psi_begin + i + 1];
+      AD<double> v1 = vars[v_begin + i + 1];
+      AD<double> cte1 = vars[cte_begin + i + 1];
+      AD<double> epsi1 = vars[epsi_begin + i + 1];
 
       // Calculate the desired position 
       AD<double> f_x = coeffs[0];
@@ -106,22 +106,22 @@ class FG_eval {
       AD<double> x = 1.0;
       for (int j = 1; j < coeffs.size(); j++) {
         f_dx += j * coeffs[j] * x;
-        x = x * x_i;
+        x = x * x0;
         f_x += coeffs[j] * x;
       }
 
       // Calculate the desired orientation
       AD<double> psi_des = CppAD::atan(f_dx);
 
-      AD<double> v_i_dt = v_i * dt;
-      AD<double> next_psi = psi_i + v_i_dt * steer_i / Lf;
+      AD<double> v0_dt = v0 * dt;
+      AD<double> next_psi = psi0 - v0_dt * steer0 / Lf;
 
-      fg[1 + x_begin + i + 1] = x_i_1 - (x_i + cos(psi_i) * v_i_dt);
-      fg[1 + y_begin + i + 1] = y_i_1 - (y_i + sin(psi_i) * v_i_dt);
-      fg[1 + psi_begin + i + 1] = psi_i_1 - next_psi;
-      fg[1 + v_begin + i + 1] = v_i_1 - (throttle_i * v_i_dt);
-      fg[1 + cte_begin + i + 1] = cte_i_1 - (f_x - y_i + sin(epsi_i) * v_i_dt);
-      fg[1 + epsi_begin + i + 1] = next_psi - psi_des;
+      fg[1 + x_begin + i + 1] = x1 - (x0 + CppAD::cos(psi0) * v0_dt);
+      fg[1 + y_begin + i + 1] = y1 - (y0 + CppAD::sin(psi0) * v0_dt);
+      fg[1 + psi_begin + i + 1] = psi1 - next_psi;
+      fg[1 + v_begin + i + 1] = v1 - (v0 + throttle0 * dt);
+      fg[1 + cte_begin + i + 1] = cte1 - (f_x - y0 + CppAD::sin(epsi0) * v0_dt);
+      fg[1 + epsi_begin + i + 1] = epsi1 - (next_psi - psi_des);
     }
   }
 };
