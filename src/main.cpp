@@ -146,13 +146,11 @@ int main() {
           py = 0.0;
           psi = 0.0;
 
-          // Calculate the derivative of the polynomial at the current location
+          // Calculate the cross track error -- just the constant term of the polynomial, as it's from the car's point of view (x = 0)
+          double cte = coeffs[0];
+
+          // Calculate the derivative of the polynomial at (x = 0), which is just the coefficient of the x^1 term of the polynomial
           double f_dx = coeffs[1];
-          double x = 1.0;
-          for (int i = 2; i < coeffs.size(); i++) {
-            x = x * px;
-            f_dx += i * coeffs[i] * x;
-          }
 
           // Use this derivate to calculate the orientation error
           double epsi = psi - atan(f_dx);
