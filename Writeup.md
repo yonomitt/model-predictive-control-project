@@ -20,18 +20,16 @@ The model uses the current state and actuator values to calculate the next state
 
 1. x[t+1] = x[t] + v[t] * cos(ψ[t]) * dt
 2. y[t+1] = y[t] + v[t] * sin(ψ[t]) * dt
-3. ψ[t+1] = ψ[t] + v[t] / Lf * δ[t] * dt
+3. ψ[t+1] = ψ[t] - v[t] / Lf * δ[t] * dt
 4. v_[t+1] = v[t] + a[t] * dt
 5. cte[t+1] = f(x[t]) - y[t] + v[t] * sin(eψ[t]) * dt
-6. eψ[t+1] = ψ[t] - ψdes[t] + v[t] * δ[t] / Lf * dt
+6. eψ[t+1] = ψ[t] - ψdes[t] - v[t] * δ[t] / Lf * dt
 
 In these equations, **δ** is the steering angle.
 
 ### Timestep Length and Elapsed Duration (N & dt)
 
 I chose **N** to be as large as possible without slowing down the solution calculation. I chose **dt** to be as small as possible while keeping the product `N * dt` as large as possible.
-
-Additionally, I wanted **dt** to be a multiple of 100ms, in order to easily account for the latency of the control system. This made it possible in the code to just use actuator values when calculating the update equations.
 
 ### Polynomial Fitting and MPC Preprocessing
 
@@ -43,4 +41,4 @@ Additionally, the cross track error becomes just the constant term of the polyno
 
 ### Model Predictive Control with Latency
 
-By choosing a **dt** that is a multiple of 100ms, I was easily able to account for the latency in the update equations by setting **δ** and **a** to previous values in the main update loop.
+To account for latency, I took the advice of my reviewer and used the kinematic equations to calculate the initial state of the vehicle 100ms into the future. Then the actuators calculated would be as if there was a 100ms latency between calculation and the actual actuation.
