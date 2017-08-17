@@ -22,7 +22,7 @@ double dt = 0.05;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-const double target_v = 45.0;
+const double target_v = 75.0;
 
 size_t x_begin = 0;
 size_t y_begin = x_begin + N;
@@ -54,25 +54,25 @@ class FG_eval {
       fg[0] += CppAD::pow(vars[cte_begin + i], 2);
 
       // Minimize orientation error
-      fg[0] += 100 * CppAD::pow(vars[epsi_begin + i], 2);
+      fg[0] += CppAD::pow(vars[epsi_begin + i], 2);
 
       // Keep velocity as close to the target velocity as possible
-      fg[0] += 5 * CppAD::pow(vars[v_begin + i] - target_v, 2);
+      fg[0] += CppAD::pow(vars[v_begin + i] - target_v, 2);
     } 
 
     // Minimize the use of actuators.
     for (int i = 0; i < N - 1; i++) {
-      fg[0] += 100 * CppAD::pow(vars[steer_begin + i], 2);
-      fg[0] += 50 * CppAD::pow(vars[throttle_begin + i], 2);
+      fg[0] += 6000 * CppAD::pow(vars[steer_begin + i], 2);
+      fg[0] += CppAD::pow(vars[throttle_begin + i], 2);
     }
 
     // Cost based on change in actuators to make a smoother ride
     for (int i = 1; i < N - 1; i++) {
       // Minimize changes in steering
-      fg[0] += 3000 * CppAD::pow(vars[steer_begin + i] - vars[steer_begin + i - 1], 2);
+      fg[0] += 4000 * CppAD::pow(vars[steer_begin + i] - vars[steer_begin + i - 1], 2);
 
       // Minimize changes in throttle
-      fg[0] += 2000 * CppAD::pow(vars[throttle_begin + i] - vars[throttle_begin + i - 1], 2);
+      fg[0] += 100 * CppAD::pow(vars[throttle_begin + i] - vars[throttle_begin + i - 1], 2);
     }
 
     // Initial state
@@ -83,7 +83,6 @@ class FG_eval {
     fg[1 + cte_begin] = vars[cte_begin];   
     fg[1 + epsi_begin] = vars[epsi_begin];   
 
-    int latency = round(0.1 / dt);
     // Setup constraints
     for (int i = 0; i < N - 1; i++) {
       // Current state
@@ -96,11 +95,6 @@ class FG_eval {
 
       AD<double> steer0 = vars[steer_begin + i];
       AD<double> throttle0 = vars[throttle_begin + i];
-
-      if (i > (latency - 1)) {
-        throttle0 = vars[throttle_begin + i - latency];
-        steer0 = vars[steer_begin + i - latency];
-      }
 
       // Next state
       AD<double> x1 = vars[x_begin + i + 1];

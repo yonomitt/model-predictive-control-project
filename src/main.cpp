@@ -12,6 +12,8 @@
 // for convenience
 using json = nlohmann::json;
 
+const double Lf = 2.67;
+
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
@@ -91,6 +93,10 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+	  double steer = j[1]["steering_angle"];
+	  double throttle = j[1]["throttle"];
+
+	  std::cout << "STEER: " << steer << std::endl;
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -155,9 +161,17 @@ int main() {
           // Use this derivate to calculate the orientation error
           double epsi = psi - atan(f_dx);
 
+	  // Calculate the state 100ms into the future to account for latency
+	  double px_100ms = px + v * cos(psi) * 0.1;
+	  double py_100ms = py + v * sin(psi) * 0.1;
+	  double psi_100ms = psi - (v / Lf) * steer * 0.1;
+	  double v_100ms = v + throttle * 0.1;
+	  double cte_100ms = cte + v * sin(epsi) * 0.1;
+	  double epsi_100ms = epsi - (v / Lf) * steer * 0.1;
+
           // Create a vector describing the current state of the car
           Eigen::VectorXd state(6);
-          state << px, py, psi, v, cte, epsi;
+          state << px_100ms, py_100ms, psi_100ms, v_100ms, cte_100ms, epsi_100ms;
 
           // Use the MPC to calculate the optimal steering and throttle values
           auto solution = mpc.Solve(state, coeffs);
